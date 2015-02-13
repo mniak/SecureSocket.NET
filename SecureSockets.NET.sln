@@ -1,7 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SecureSockets", "src\SecureSockets.csproj", "{0A9A8570-6EFC-4CD5-A3DA-B24CA3FAE8C3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SecureSocketsNet", "src\SecureSocketsNet.csproj", "{0A9A8570-6EFC-4CD5-A3DA-B24CA3FAE8C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestClient", "TestClient\TestClient.csproj", "{D64686B5-C7FB-4F79-B278-A239B5394168}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestServer", "TestServer\TestServer.csproj", "{10155D43-9AE4-4591-8679-48E0E17C57BF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,6 +17,14 @@ Global
 		{0A9A8570-6EFC-4CD5-A3DA-B24CA3FAE8C3}.Debug|x86.Build.0 = Debug|x86
 		{0A9A8570-6EFC-4CD5-A3DA-B24CA3FAE8C3}.Release|x86.ActiveCfg = Release|x86
 		{0A9A8570-6EFC-4CD5-A3DA-B24CA3FAE8C3}.Release|x86.Build.0 = Release|x86
+		{D64686B5-C7FB-4F79-B278-A239B5394168}.Debug|x86.ActiveCfg = Debug|x86
+		{D64686B5-C7FB-4F79-B278-A239B5394168}.Debug|x86.Build.0 = Debug|x86
+		{D64686B5-C7FB-4F79-B278-A239B5394168}.Release|x86.ActiveCfg = Release|x86
+		{D64686B5-C7FB-4F79-B278-A239B5394168}.Release|x86.Build.0 = Release|x86
+		{10155D43-9AE4-4591-8679-48E0E17C57BF}.Debug|x86.ActiveCfg = Debug|x86
+		{10155D43-9AE4-4591-8679-48E0E17C57BF}.Debug|x86.Build.0 = Debug|x86
+		{10155D43-9AE4-4591-8679-48E0E17C57BF}.Release|x86.ActiveCfg = Release|x86
+		{10155D43-9AE4-4591-8679-48E0E17C57BF}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
