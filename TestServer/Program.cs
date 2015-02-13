@@ -14,33 +14,33 @@ namespace TestServer
         static void Main(string[] args)
         {
             byte[] buffer = new byte[1024];
-            int bytesRecebidos;
+            int receivedBytes;
 
             SecureSocket socket = new SecureSocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             socket.Bind(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9999));
             socket.Listen(10);
-            Console.WriteLine("Socket ligado");
-            Console.WriteLine("Aguardando conexoes...");
+            Console.WriteLine("Socket started");
+            Console.WriteLine("Waiting connections...");
             while (true)
             {
                 var scli = socket.Accept();
-                Console.WriteLine("Conexao recebida.");
+                Console.WriteLine("Connection received.");
                 while (scli.Connected)
                 {
-                    Console.WriteLine("Lendo dados...");
+                    Console.WriteLine("Reading data...");
                     do
                     {
-                        bytesRecebidos = scli.Receive(buffer);
-                        byte[] temp = new byte[bytesRecebidos];
-                        Array.Copy(buffer, 0, temp, 0, bytesRecebidos);
-                        Console.WriteLine("Dados lidos: \"{0}\"", Encoding.UTF8.GetString(temp));
+                        receivedBytes = scli.Receive(buffer);
+                        byte[] temp = new byte[receivedBytes];
+                        Array.Copy(buffer, 0, temp, 0, receivedBytes);
+                        Console.WriteLine("Data read: \"{0}\"", Encoding.UTF8.GetString(temp));
                         scli.Send(Encoding.UTF8.GetBytes(string.Format("ACK: \"{0}\"", Encoding.UTF8.GetString(temp))));
                     }
-                    while (bytesRecebidos < buffer.Length && scli.Available > 0);
+                    while (receivedBytes < buffer.Length && scli.Available > 0);
 
                     Thread.Sleep(50);
                 }
-                Console.WriteLine("Desconectado. Aguardando nova conexão...");
+                Console.WriteLine("Disconnected. Waiting new connection...");
             }
         }
     }

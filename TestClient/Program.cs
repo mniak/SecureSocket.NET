@@ -11,7 +11,6 @@ namespace TestClient
 {
     class Program
     {
-        static SecureSocket socket;
         static void Main(string[] args)
         {
             RunClientInSynchronousMode();
@@ -22,35 +21,35 @@ namespace TestClient
         {
             int timer = 1000;
             byte[] buffer = new byte[1024];
-            int bytesRecebidos;
+            int receivedBytes;
 
             SecureSocket socket = new SecureSocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            Console.WriteLine("Conectando ao servidor em {0} segundos", timer / 1000D);
+            Console.WriteLine("Connecting to server in {0} seconds", timer / 1000D);
             Thread.Sleep(timer);
             socket.Connect("127.0.0.1", 9999);
-            Console.WriteLine("Conectado ao servidor");
+            Console.WriteLine("Connected to server");
             while (socket.Connected)
             {
                 // Leitura
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.Write("> ");
-                string linha = Console.ReadLine();
-                socket.Send(Encoding.UTF8.GetBytes(linha));
+                string line = Console.ReadLine();
+                socket.Send(Encoding.UTF8.GetBytes(line));
 
                 // Escrita
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 do
                 {
-                    bytesRecebidos = socket.Receive(buffer);
-                    byte[] temp = new byte[bytesRecebidos];
-                    Array.Copy(buffer, 0, temp, 0, bytesRecebidos);
+                    receivedBytes = socket.Receive(buffer);
+                    byte[] temp = new byte[receivedBytes];
+                    Array.Copy(buffer, 0, temp, 0, receivedBytes);
                     Console.WriteLine("< {0}", Encoding.UTF8.GetString(temp));
                 }
-                while (bytesRecebidos < buffer.Length && socket.Available > 0);
+                while (receivedBytes < buffer.Length && socket.Available > 0);
                 Thread.Sleep(50);
 
             }
-            Console.WriteLine("Desconectado. Finalizando...");
+            Console.WriteLine("Disconnected. Finishing...");
         }
     }
 }
