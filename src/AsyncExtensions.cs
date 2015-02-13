@@ -26,9 +26,21 @@ namespace SecureSockets
         }
         internal static Task<TResult> ToStartedTask<TResult>(this Func<TResult> func)
         {
-            var task = new Task<TResult>(func);
+            Task<TResult> task;
+            task = new Task<TResult>(func);
             task.Start();
             return task;
+        }
+        internal static TResult GetResult<TResult>(this IAsyncResult asyncResult)
+        {
+            try
+            {
+                return ((Task<TResult>)asyncResult).Result;
+            }
+            catch (AggregateException ex) 
+            {
+                throw ex.InnerException;
+            }
         }
     }
 }

@@ -392,7 +392,7 @@ namespace SecureSockets
         }
         public bool EndConnect(IAsyncResult asyncResult)
         {
-            return ((Task<bool>)asyncResult).Result;
+            return asyncResult.GetResult<bool>();
         }
 
         public int Send(byte[] buffer, int offset, int size)
