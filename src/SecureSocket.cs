@@ -16,7 +16,7 @@ namespace SecureSockets
 {
     public class SecureSocket : IDisposable
     {
-        private Socket socket;
+        private Socket innerSocket;
         private NetworkStream netStream;
         private SslStream sslStream;
         private SslProtocols sslProtocols;
@@ -24,45 +24,60 @@ namespace SecureSockets
         private bool disposed;
         private bool sslAuthenticated;
 
+        private X509Certificate2 serverCertificate;
+        private X509Certificate2 clientCertificate;
+
         private SecureSocket(SslProtocols sslProtocols)
         {
+            if (sslProtocols == SslProtocols.None)
+                throw new ArgumentException("The protocol cannot be None", "sslProtocols");
+
             this.sslProtocols = sslProtocols;
         }
         private SecureSocket(Socket socket, SslProtocols sslProtocols = SslProtocols.Tls)
             : this(sslProtocols)
         {
-            this.socket = socket;
+            this.innerSocket = socket;
         }
         public SecureSocket(AddressFamily addressFamily, SocketType socketType, ProtocolType protocolType, SslProtocols sslProtocols = SslProtocols.Tls)
             : this(sslProtocols)
         {
-            this.socket = new Socket(addressFamily, socketType, protocolType);
+            this.innerSocket = new Socket(addressFamily, socketType, protocolType);
         }
 
         private void InitializeAsServer()
         {
-            this.netStream = new NetworkStream(this.socket);
+            this.netStream = new NetworkStream(this.innerSocket);
             this.sslStream = new SslStream(this.netStream, false, (a, b, c, d) =>
             {
                 return true;
             });
 
-            X509Certificate2 certificate = new X509Certificate2("C:/certs/Server.pfx");
+            X509Certificate2 certificate = new X509Certificate2(serverCertificate);
             sslStream.AuthenticateAsServer(certificate, true, sslProtocols, true);
             sslAuthenticated = true;
         }
         private void InitializeAsClient(string targetHost)
         {
-            this.netStream = new NetworkStream(this.socket);
+            this.netStream = new NetworkStream(this.innerSocket);
             this.sslStream = new SslStream(this.netStream, false, (a, b, c, d) =>
             {
                 return true;
             });
 
             X509CertificateCollection certificates = new X509CertificateCollection();
-            certificates.Add(new X509Certificate2("C:/certs/Client.pfx"));
+            certificates.Add(clientCertificate);
             sslStream.AuthenticateAsClient(targetHost, certificates, sslProtocols, true);
             sslAuthenticated = true;
+        }
+
+        public void LoadServerCertificate(X509Certificate2 certificate)
+        {
+            this.serverCertificate = certificate;
+        }
+        public void LoadClientCertificate(X509Certificate2 certificate)
+        {
+            this.clientCertificate = certificate;
         }
 
         private void CheckDisposed()
@@ -91,271 +106,274 @@ namespace SecureSockets
             }
         }
 
-        // Propriedades
+        // Properties
         public AddressFamily AddressFamily
         {
             get
             {
-                return this.socket.AddressFamily;
+                return this.innerSocket.AddressFamily;
             }
         }
         public int Available
         {
             get
             {
-                return this.socket.Available;
+                return this.innerSocket.Available;
             }
         }
         public bool Blocking
         {
             get
             {
-                return this.socket.Blocking;
+                return this.innerSocket.Blocking;
             }
             set
             {
-                this.socket.Blocking = value;
+                this.innerSocket.Blocking = value;
             }
         }
         public bool Connected
         {
             get
             {
-                return this.socket.Connected;
+                return this.innerSocket.Connected;
             }
         }
         public bool DontFragment
         {
             get
             {
-                return this.socket.DontFragment;
+                return this.innerSocket.DontFragment;
             }
             set
             {
-                this.socket.DontFragment = value;
+                this.innerSocket.DontFragment = value;
             }
         }
         public bool EnableBroadcast
         {
             get
             {
-                return this.socket.EnableBroadcast;
+                return this.innerSocket.EnableBroadcast;
             }
             set
             {
-                this.socket.EnableBroadcast = value;
+                this.innerSocket.EnableBroadcast = value;
             }
         }
         public bool ExclusiveAddressUse
         {
             get
             {
-                return this.socket.ExclusiveAddressUse;
+                return this.innerSocket.ExclusiveAddressUse;
             }
             set
             {
-                this.socket.ExclusiveAddressUse = value;
+                this.innerSocket.ExclusiveAddressUse = value;
             }
         }
         public IntPtr Handle
         {
             get
             {
-                return this.socket.Handle;
+                return this.innerSocket.Handle;
             }
         }
         public bool IsBound
         {
             get
             {
-                return this.socket.IsBound;
+                return this.innerSocket.IsBound;
             }
         }
         public LingerOption LingerState
         {
             get
             {
-                return this.socket.LingerState;
+                return this.innerSocket.LingerState;
             }
             set
             {
-                this.socket.LingerState = value;
+                this.innerSocket.LingerState = value;
             }
         }
         public EndPoint LocalEndPoint
         {
             get
             {
-                return this.socket.LocalEndPoint;
+                return this.innerSocket.LocalEndPoint;
             }
         }
         public bool MulticastLoopback
         {
             get
             {
-                return this.socket.MulticastLoopback;
+                return this.innerSocket.MulticastLoopback;
             }
             set
             {
-                this.socket.MulticastLoopback = value;
+                this.innerSocket.MulticastLoopback = value;
             }
         }
         public bool NoDelay
         {
             get
             {
-                return this.socket.NoDelay;
+                return this.innerSocket.NoDelay;
             }
             set
             {
-                this.socket.NoDelay = value;
+                this.innerSocket.NoDelay = value;
             }
         }
         public ProtocolType ProtocolType
         {
             get
             {
-                return this.socket.ProtocolType;
+                return this.innerSocket.ProtocolType;
             }
         }
         public int ReceiveBufferSize
         {
             get
             {
-                return this.socket.ReceiveBufferSize;
+                return this.innerSocket.ReceiveBufferSize;
             }
             set
             {
-                this.socket.ReceiveBufferSize = value;
+                this.innerSocket.ReceiveBufferSize = value;
             }
         }
         public int ReceiveTimeout
         {
             get
             {
-                return this.socket.ReceiveTimeout;
+                return this.innerSocket.ReceiveTimeout;
             }
             set
             {
-                this.socket.ReceiveTimeout = value;
+                this.innerSocket.ReceiveTimeout = value;
             }
         }
         public EndPoint RemoteEndPoint
         {
             get
             {
-                return this.socket.RemoteEndPoint;
+                return this.innerSocket.RemoteEndPoint;
             }
         }
         public int SendBufferSize
         {
             get
             {
-                return this.socket.SendBufferSize;
+                return this.innerSocket.SendBufferSize;
             }
             set
             {
-                this.socket.SendBufferSize = value;
+                this.innerSocket.SendBufferSize = value;
             }
         }
         public int SendTimeout
         {
             get
             {
-                return this.socket.SendTimeout;
+                return this.innerSocket.SendTimeout;
             }
             set
             {
-                this.socket.SendTimeout = value;
+                this.innerSocket.SendTimeout = value;
             }
         }
         public SocketType SocketType
         {
             get
             {
-                return this.socket.SocketType;
+                return this.innerSocket.SocketType;
             }
         }
         public short Ttl
         {
             get
             {
-                return this.socket.Ttl;
+                return this.innerSocket.Ttl;
             }
             set
             {
-                this.socket.Ttl = value;
+                this.innerSocket.Ttl = value;
             }
         }
         public bool UseOnlyOverlappedIO
         {
             get
             {
-                return this.socket.UseOnlyOverlappedIO;
+                return this.innerSocket.UseOnlyOverlappedIO;
             }
             set
             {
-                this.socket.UseOnlyOverlappedIO = value;
+                this.innerSocket.UseOnlyOverlappedIO = value;
             }
         }
 
         public void Bind(EndPoint localEP)
         {
-            this.socket.Bind(localEP);
+            this.innerSocket.Bind(localEP);
         }
         public void Listen(int backlog)
         {
-            this.socket.Listen(backlog);
+            this.innerSocket.Listen(backlog);
         }
 
         public void Close()
         {
-            this.socket.Close();
+            this.innerSocket.Close();
         }
         public void Close(int timeout)
         {
-            this.socket.Close(timeout);
+            this.innerSocket.Close(timeout);
         }
         public void Disconnect(bool reuseSocket)
         {
             this.sslAuthenticated = false;
-            this.socket.Disconnect(reuseSocket);
+            this.innerSocket.Disconnect(reuseSocket);
         }
         public void Dispose()
         {
             this.sslStream.Dispose();
-            this.socket.Dispose();
+            this.innerSocket.Dispose();
             this.disposed = true;
         }
         public void Shutdown(SocketShutdown how)
         {
-            this.socket.Shutdown(how);
+            this.innerSocket.Shutdown(how);
         }
 
         public object GetSocketOption(SocketOptionLevel optionLevel, SocketOptionName optionName)
         {
-            return this.socket.GetSocketOption(optionLevel, optionName);
+            return this.innerSocket.GetSocketOption(optionLevel, optionName);
         }
         public void GetSocketOption(SocketOptionLevel optionLevel, SocketOptionName optionName, byte[] optionValue)
         {
-            this.socket.GetSocketOption(optionLevel, optionName, optionValue);
+            this.innerSocket.GetSocketOption(optionLevel, optionName, optionValue);
         }
         public byte[] GetSocketOption(SocketOptionLevel optionLevel, SocketOptionName optionName, int optionLength)
         {
-            return this.socket.GetSocketOption(optionLevel, optionName, optionLength);
+            return this.innerSocket.GetSocketOption(optionLevel, optionName, optionLength);
         }
         public int IOControl(int ioControlCode, byte[] optionInValue, byte[] optionOutValue)
         {
-            return this.socket.IOControl(ioControlCode, optionInValue, optionOutValue);
+            return this.innerSocket.IOControl(ioControlCode, optionInValue, optionOutValue);
         }
         public int IOControl(IOControlCode ioControlCode, byte[] optionInValue, byte[] optionOutValue)
         {
-            return this.socket.IOControl(ioControlCode, optionInValue, optionOutValue);
+            return this.innerSocket.IOControl(ioControlCode, optionInValue, optionOutValue);
         }
 
         public SecureSocket Accept()
         {
-            Socket acceptedSocket = this.socket.Accept();
+            if (serverCertificate == null)
+                throw new InvalidOperationException("The client certificate must be loaded before using this operation");
+
+            Socket acceptedSocket = this.innerSocket.Accept();
             SecureSocket secureSocket = new SecureSocket(acceptedSocket);
             secureSocket.InitializeAsServer();
             return secureSocket;
@@ -375,7 +393,10 @@ namespace SecureSockets
 
         public void Connect(string host, int port)
         {
-            this.socket.Connect(host, port);
+            if (clientCertificate == null)
+                throw new InvalidOperationException("The client certificate must be loaded before using this operation");
+
+            this.innerSocket.Connect(host, port);
             this.InitializeAsClient(host.ToString());
         }
         public Task<bool> ConnectAsync(string host, int port)
@@ -399,7 +420,6 @@ namespace SecureSockets
         {
             CheckConnected();
             CheckDisposed();
-
             this.sslStream.Write(buffer, offset, size);
             this.sslStream.Flush();
             return size;
@@ -425,7 +445,6 @@ namespace SecureSockets
         {
             CheckConnected();
             CheckDisposed();
-
             return this.sslStream.Read(buffer, offset, count);
         }
         public int Receive(byte[] buffer)
@@ -445,7 +464,7 @@ namespace SecureSockets
             return ((Task<int>)asyncResult).Result;
         }
 
-        // Coisas UDP
+        // TODO:
         //public int ReceiveFrom(byte[] buffer, ref EndPoint remoteEP);
         //public bool SendPacketsAsync(SocketAsyncEventArgs e);
         //public int SendTo(byte[] buffer, EndPoint remoteEP);
@@ -456,36 +475,16 @@ namespace SecureSockets
         //public int EndSendTo(IAsyncResult asyncResult);
         //public bool SendToAsync(SocketAsyncEventArgs e);        
 
-        // Coisas Assíncronas
         //public bool ReceiveMessageFromAsync(SocketAsyncEventArgs e);
-        //public bool ReceiveAsync(SocketAsyncEventArgs e);
         //public bool ReceiveFromAsync(SocketAsyncEventArgs e);
         //public bool AcceptAsync(SocketAsyncEventArgs e);
         //public IAsyncResult BeginAccept(AsyncCallback callback, object state);
-        //[TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-        //public IAsyncResult BeginAccept(int receiveSize, AsyncCallback callback, object state);
-        //public IAsyncResult BeginAccept(Socket acceptSocket, int receiveSize, AsyncCallback callback, object state);
-        //public IAsyncResult BeginConnect(EndPoint remoteEP, AsyncCallback callback, object state);
-        //public IAsyncResult BeginConnect(IPAddress address, int port, AsyncCallback requestCallback, object state);
-        //public IAsyncResult BeginConnect(IPAddress[] addresses, int port, AsyncCallback requestCallback, object state);
-        //public IAsyncResult BeginConnect(string host, int port, AsyncCallback requestCallback, object state);
         //public IAsyncResult BeginDisconnect(bool reuseSocket, AsyncCallback callback, object state);
         //public IAsyncResult BeginSendFile(string fileName, AsyncCallback callback, object state);
         //public IAsyncResult BeginSendFile(string fileName, byte[] preBuffer, byte[] postBuffer, TransmitFileOptions flags, AsyncCallback callback, object state);
-        //public Socket EndAccept(IAsyncResult asyncResult);
-        //public Socket EndAccept(out byte[] buffer, IAsyncResult asyncResult);
-        //public Socket EndAccept(out byte[] buffer, out int bytesTransferred, IAsyncResult asyncResult);
-        //public void EndConnect(IAsyncResult asyncResult);
         //public void EndDisconnect(IAsyncResult asyncResult);
-        //public int EndReceive(IAsyncResult asyncResult);
-        //public int EndReceive(IAsyncResult asyncResult, out SocketError errorCode);
-        //public int EndReceiveFrom(IAsyncResult asyncResult, ref EndPoint endPoint);
-        //public int EndSend(IAsyncResult asyncResult, out SocketError errorCode);
         //public void EndSendFile(IAsyncResult asyncResult);
-        //public bool SendAsync(SocketAsyncEventArgs e);
         //public static void CancelConnectAsync(SocketAsyncEventArgs e);
-        //public bool ConnectAsync(SocketAsyncEventArgs e);
-        //public static bool ConnectAsync(SocketType socketType, ProtocolType protocolType, SocketAsyncEventArgs e);
         //public bool DisconnectAsync(SocketAsyncEventArgs e);
     }
 }
