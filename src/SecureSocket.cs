@@ -362,11 +362,11 @@ namespace SecureSockets
         }
         public Task<SecureSocket> AcceptAsync()
         {
-            return new Task<SecureSocket>(Accept);
+            return AsyncExtensions.ToStartedTask(Accept);
         }
         public IAsyncResult BeginAccept(AsyncCallback callback, object state)
         {
-            return AcceptAsync().ToApm(callback, state);
+            return AcceptAsync().AsApm(callback, state);
         }
         public SecureSocket EndAccept(IAsyncResult asyncResult)
         {
@@ -380,7 +380,7 @@ namespace SecureSockets
         }
         public Task<bool> ConnectAsync(string host, int port)
         {
-            return new Task<bool>(() =>
+            return AsyncExtensions.ToStartedTask(() =>
             {
                 Connect(host, port);
                 return true;
@@ -388,7 +388,7 @@ namespace SecureSockets
         }
         public IAsyncResult BeginConnect(string host, int port, AsyncCallback callback, object state)
         {
-            return ConnectAsync(host, port).ToApm(callback, state);
+            return ConnectAsync(host, port).AsApm(callback, state);
         }
         public bool EndConnect(IAsyncResult asyncResult)
         {
@@ -408,14 +408,13 @@ namespace SecureSockets
         {
             return Send(buffer, 0, buffer.Length);
         }
-
         private Task<int> SendAsync(byte[] buffer, int offset, int size)
         {
-            return new Task<int>(() => Send(buffer, offset, size));
+            return AsyncExtensions.ToStartedTask(() => Send(buffer, offset, size));
         }
         public IAsyncResult BeginSend(byte[] buffer, int offset, int size, AsyncCallback callback, object state)
         {
-            return SendAsync(buffer, offset, size).ToApm(callback, state);
+            return SendAsync(buffer, offset, size).AsApm(callback, state);
         }
         public int EndSend(IAsyncResult asyncResult)
         {
@@ -432,6 +431,18 @@ namespace SecureSockets
         public int Receive(byte[] buffer)
         {
             return Receive(buffer, 0, buffer.Length);
+        }
+        private Task<int> ReceiveAsync(byte[] buffer, int offset, int size)
+        {
+            return AsyncExtensions.ToStartedTask(() => Receive(buffer, offset, size));
+        }
+        public IAsyncResult BeginReceive(byte[] buffer, int offset, int size, AsyncCallback callback, object state)
+        {
+            return ReceiveAsync(buffer, offset, size).AsApm(callback, state);
+        }
+        public int EndReceive(IAsyncResult asyncResult)
+        {
+            return ((Task<int>)asyncResult).Result;
         }
 
         // Coisas UDP
