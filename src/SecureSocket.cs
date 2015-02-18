@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net.Sockets;
 using System.Net;
-using System.Runtime;
-using System.Collections;
 using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
+using System.Net.Sockets;
 using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using System.Threading;
 
 namespace SecureSockets
 {
