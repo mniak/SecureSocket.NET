@@ -6,6 +6,7 @@ using SecureSockets;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
+using System.Security.Cryptography.X509Certificates;
 
 namespace TestServer
 {
@@ -16,7 +17,8 @@ namespace TestServer
             byte[] buffer = new byte[1024];
             int receivedBytes;
 
-            SecureSocket socket = new SecureSocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            X509Certificate2 certificate = new X509Certificate2("./certs/server.pfx");
+            SecureSocket socket = SecureSocketFactory.CreateSecureSocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp, certificate);
             socket.Bind(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9999));
             socket.Listen(10);
             Console.WriteLine("Socket started");

@@ -13,55 +13,61 @@ namespace SecureSockets
         private Socket innerSocket;
         private NetworkStream netStream;
         private SslStream sslStream;
-        private SslProtocols sslProtocols;
 
         private bool disposed;
+        private bool useSsl;
         private bool sslAuthenticated;
 
-        private X509Certificate2 serverCertificate;
-        private X509Certificate2 clientCertificate;
+        internal X509Certificate2 serverCertificate;
+        internal X509Certificate2 clientCertificate;
 
-        private SecureSocket(SslProtocols sslProtocols)
+        public SslProtocols SslProtocols { get; set; }
+
+        internal SecureSocket(bool useSsl, SslProtocols sslProtocols = SslProtocols.Tls)
         {
-            if (sslProtocols == SslProtocols.None)
-                throw new ArgumentException("The protocol cannot be None", "sslProtocols");
+            this.useSsl = useSsl;
 
-            this.sslProtocols = sslProtocols;
+            if (sslProtocols == SslProtocols.None)
+                throw new ArgumentException("This value cannot be None.", "sslPrototocols");
+
+            this.SslProtocols = sslProtocols;
         }
-        private SecureSocket(Socket socket, SslProtocols sslProtocols = SslProtocols.Tls)
-            : this(sslProtocols)
+        internal SecureSocket(Socket socket, bool isSecure)
+            : this(isSecure)
         {
             this.innerSocket = socket;
         }
-        public SecureSocket(AddressFamily addressFamily, SocketType socketType, ProtocolType protocolType, SslProtocols sslProtocols = SslProtocols.Tls)
-            : this(sslProtocols)
+        internal SecureSocket(bool isSecure, AddressFamily addressFamily, SocketType socketType, ProtocolType protocolType)
+            : this(isSecure)
         {
             this.innerSocket = new Socket(addressFamily, socketType, protocolType);
         }
 
+        private void CreateNetStream()
+        {
+            this.netStream = new NetworkStream(this.innerSocket);
+        }
+
         private void InitializeAsServer()
         {
-            this.netStream = new NetworkStream(this.innerSocket);
             this.sslStream = new SslStream(this.netStream, false, (a, b, c, d) =>
             {
                 return true;
             });
-
-            X509Certificate2 certificate = new X509Certificate2(serverCertificate);
-            sslStream.AuthenticateAsServer(certificate, true, sslProtocols, true);
+            sslStream.AuthenticateAsServer(serverCertificate, true, SslProtocols, true);
             sslAuthenticated = true;
         }
+
         private void InitializeAsClient(string targetHost)
         {
-            this.netStream = new NetworkStream(this.innerSocket);
             this.sslStream = new SslStream(this.netStream, false, (a, b, c, d) =>
-            {
-                return true;
-            });
+           {
+               return true;
+           });
 
             X509CertificateCollection certificates = new X509CertificateCollection();
             certificates.Add(clientCertificate);
-            sslStream.AuthenticateAsClient(targetHost, certificates, sslProtocols, true);
+            sslStream.AuthenticateAsClient(targetHost, certificates, SslProtocols, true);
             sslAuthenticated = true;
         }
 
@@ -79,9 +85,9 @@ namespace SecureSockets
             if (this.disposed)
                 throw new ObjectDisposedException(base.GetType().FullName);
         }
-        private void CheckConnected()
+        private void CheckAuth()
         {
-            if (!sslAuthenticated)
+            if (useSsl && !sslAuthenticated)
                 throw new InvalidOperationException("This socket is not connected.");
         }
 
@@ -332,7 +338,9 @@ namespace SecureSockets
         }
         public void Dispose()
         {
-            this.sslStream.Dispose();
+            if (this.sslStream != null)
+                this.sslStream.Dispose();
+
             this.innerSocket.Dispose();
             this.disposed = true;
         }
@@ -364,12 +372,20 @@ namespace SecureSockets
 
         public SecureSocket Accept()
         {
-            if (serverCertificate == null)
+            if (useSsl && serverCertificate == null)
                 throw new InvalidOperationException("The client certificate must be loaded before using this operation");
 
             Socket acceptedSocket = this.innerSocket.Accept();
-            SecureSocket secureSocket = new SecureSocket(acceptedSocket);
-            secureSocket.InitializeAsServer();
+            SecureSocket secureSocket = new SecureSocket(acceptedSocket, this.useSsl)
+            {
+                serverCertificate = serverCertificate,
+                clientCertificate = clientCertificate
+            };
+
+            secureSocket.CreateNetStream();
+
+            if (useSsl)
+                secureSocket.InitializeAsServer();
             return secureSocket;
         }
         public Task<SecureSocket> AcceptAsync()
@@ -387,11 +403,15 @@ namespace SecureSockets
 
         public void Connect(string host, int port)
         {
-            if (clientCertificate == null)
+            if (useSsl && clientCertificate == null)
                 throw new InvalidOperationException("The client certificate must be loaded before using this operation");
 
             this.innerSocket.Connect(host, port);
-            this.InitializeAsClient(host.ToString());
+
+            CreateNetStream();
+
+            if (useSsl)
+                this.InitializeAsClient(host.ToString());
         }
         public Task<bool> ConnectAsync(string host, int port)
         {
@@ -412,10 +432,19 @@ namespace SecureSockets
 
         public int Send(byte[] buffer, int offset, int size)
         {
-            CheckConnected();
+            CheckAuth();
             CheckDisposed();
-            this.sslStream.Write(buffer, offset, size);
-            this.sslStream.Flush();
+
+            if (this.useSsl)
+            {
+                this.sslStream.Write(buffer, offset, size);
+                this.sslStream.Flush();
+            }
+            else
+            {
+                this.netStream.Write(buffer, offset, size);
+                this.netStream.Flush();
+            }
             return size;
         }
         public int Send(byte[] buffer)
@@ -437,9 +466,13 @@ namespace SecureSockets
 
         public int Receive(byte[] buffer, int offset, int count)
         {
-            CheckConnected();
+            CheckAuth();
             CheckDisposed();
-            return this.sslStream.Read(buffer, offset, count);
+
+            if (useSsl)
+                return this.sslStream.Read(buffer, offset, count);
+            else
+                return this.netStream.Read(buffer, offset, count);
         }
         public int Receive(byte[] buffer)
         {
